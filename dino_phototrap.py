@@ -1,26 +1,9 @@
-import pickle
-from typing import Any
 import numpy as np
-import pandas as pd
-import random
-from skimage import io
-from sklearn.metrics import accuracy_score, roc_auc_score
-import os
-from glob import glob
-
-from tqdm import tqdm, tqdm_notebook
-from PIL import Image
-from pathlib import Path
-
-from torchvision import transforms
-from multiprocessing.pool import ThreadPool
-from sklearn.preprocessing import LabelEncoder
-import torch.utils.data
-from torch.utils.data import Dataset, DataLoader, ConcatDataset
-from torchvision.datasets import ImageFolder
-from torchvision import datasets, transforms
-
+import torch
 import torch.nn as nn
+from torchvision import transforms
+from torchvision import transforms
+from PIL import Image
 
 
 IM_SIZE = 224
@@ -50,7 +33,7 @@ def pil_loader(path: str) -> Image.Image:
         try:
             img = Image.open(f).convert("RGB")
         except:
-            img = Image.new("RGB", (224, 224))
+            img = Image.new("RGB", (IM_SIZE, IM_SIZE))
         return img
 
 class Model():
