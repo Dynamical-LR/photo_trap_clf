@@ -39,6 +39,7 @@ def pil_loader(path: str) -> Image.Image:
 class Model():
     '''API class for neural model'''
     def __init__(self, weights_path) -> None:
+        '''path to .pth file with model's weights'''
         self.loader = pil_loader
 
         self.transform = transforms.Compose([
@@ -52,6 +53,12 @@ class Model():
         self.model.eval()
 
     def __call__(self, files, batch_size=16):
+        '''Classify images from files and return array with classes
+        files: list with pathes to photos to classify
+        batch_size: amount of photos processed paralelly
+
+        Returns: array of one-hot-encoded classes ordered as files do
+        '''
         outputs = []
         with torch.no_grad():
             for i in range(0, len(files), batch_size):
