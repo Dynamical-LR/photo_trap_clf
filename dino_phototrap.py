@@ -51,7 +51,7 @@ class Model():
         self.model.load_state_dict(torch.load(weights_path, map_location=DEVICE))
         self.model.eval()
 
-    def __call__(self, files, batch_size=16) -> Any:
+    def __call__(self, files, batch_size=16):
         outputs = []
         with torch.no_grad():
             for i in range(0, len(files), batch_size):
