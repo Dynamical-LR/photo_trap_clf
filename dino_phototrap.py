@@ -16,7 +16,7 @@ class DinoVisionTransformerClassifier(nn.Module):
     def __init__(self):
         super().__init__()
         self.transformer = torch.hub.load('facebookresearch/dinov2', MODEL_VERSION)
-        self.quality_classifier = nn.Sequential(
+        self.classifier = nn.Sequential(
             nn.Linear(384, 256),
             nn.ReLU(),
             nn.Linear(256, 3)
@@ -24,7 +24,7 @@ class DinoVisionTransformerClassifier(nn.Module):
 
     def forward(self, x):
         x = self.transformer(x)
-        x = self.quality_classifier(x)
+        x = self.classifier(x)
         return x
 
 
