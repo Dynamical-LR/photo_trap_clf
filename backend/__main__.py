@@ -6,6 +6,7 @@ from typing import cast
 import aiofiles
 from aiohttp import web
 import aiohttp
+from dino_phototrap import Model
 
 routes = web.RouteTableDef()
 logging.basicConfig(level=logging.INFO)
@@ -78,9 +79,14 @@ async def upload_images(request: web.Request) -> web.Response:
                 size += len(chunk)
                 await f.write(chunk)
 
-        paths.append(filename)
+        paths.append(os.path.join(IMAGES_DIR, filename))
 
-    return web.Response(text=f"{len(paths)} files stored")
+    model = Model("weights/dinov2_5.pth")
+    predictions = model(paths)
+
+    log.info(f"{predictions=}")
+
+    return web.json_response(list(predictions))
 
 
 def main():
