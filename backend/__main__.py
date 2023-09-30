@@ -13,7 +13,10 @@ log = logging.getLogger(__name__)
 
 IMAGES_DIR: str = "images"
 INDEX_HTML_PATH: str = "index.html"
-
+EXT2CONTENT_TYPE: dict[str, str] = {
+    "css": "text/css",
+    "js": "text/javascript"
+}
 
 @routes.get("/")
 async def index(_: web.Request) -> web.Response:
@@ -27,10 +30,15 @@ async def index(_: web.Request) -> web.Response:
 
 @routes.get(r"/static/{path}")
 async def static(request: web.Request) -> web.Response:
+    """
+    Returns static files
+    """
     path: str = request.match_info["path"]
+    log.info(f"Opening {path} for static")
     async with aiofiles.open(f"static/{path}") as f:
         resource = await f.read()
-    return web.Response(text=resource)
+    ext = path.rsplit(".", 1)[-1]
+    return web.Response(text=resource, content_type=EXT2CONTENT_TYPE[ext])
 
 
 @routes.post("/upload-images")
