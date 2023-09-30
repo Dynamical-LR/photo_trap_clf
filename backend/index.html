@@ -1,8 +1,64 @@
-<form action="/upload-images" method="post" accept-charset="utf-8"
-      enctype="multipart/form-data">
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title></title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href="/static/style.css" rel="stylesheet">
+		<script src="/static/index.js"></script>
+	</head>
+	<body>
+		<header>
+			<h1>Dynamical LR here</h1>			
+			<p id="saved-time">You saved <b>45</b> hours with our service!</p>
+		</header>
 
-    <label for="images">Images</label>
-    <input id="images" name="images" type="file" value=""  webkitdirectory directory multiple/>
+		<div class="form-container" id="form-container">
+			<form id="upload-images-form" class="images" action="/upload-images" method="post" accept-charset="utf-8"
+																																 enctype="multipart/form-data">
 
-    <input type="submit" value="submit"/>
-</form>
+				<label class="images" for="images">Drop directories here or&nbsp;</label>
+				<div class="select-images" id="select-images">
+					choose from explorer
+					<input id="upload-images" type="file" class="hide_file" webkitdirectory directory files multiple>
+				</div>
+
+				<input type="submit" value="submit" style="display: none"/>
+			</form>
+		</div>
+
+		<div id="result-window">
+			<div id="result-diagram">
+				<div class="diagram-bar-container">
+					<div class="diagram-bar" id="diagram-bar-broken"></div>
+					<p class="diagram-bar-status">Повреждённые: 50</p>
+				</div>	
+				<div class="diagram-bar-container">
+					<div class="diagram-bar"id="diagram-bar-empty"></div>
+					<p class="diagram-bar-status">Пустые: 50</p>
+				</div>	
+				<div class="diagram-bar-container">
+					<div class="diagram-bar" id="diagram-bar-bird"></div>
+					<p class="diagram-bar-status">Птицы: 50</p>
+				</div>	
+				<div class="diagram-bar-container">
+					<div class="diagram-bar" id="diagram-bar-mammal"></div>
+					<p class="diagram-bar-status">Млекопитающие: 50</p>
+				</div>	
+				<div class="diagram-bar-container">
+					<div class="diagram-bar" id="diagram-bar-insect"></div>
+					<p class="diagram-bar-status">Насекомые: 50</p>
+				</div>	
+			</div>
+			<div id="uploading-progress">
+				<h5 class="upload-time">
+					Until full upload:&nbsp;
+					<h5 id="upload-time-value"></h5>
+				</h5>
+			</div>
+		</div>
+		<footer>
+
+		</footer>
+	</body>
+</html>
