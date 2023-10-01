@@ -1,19 +1,21 @@
 import asyncio
 import base64
 from collections import defaultdict
+import csv
 import json
 import logging
 import os
 from typing import AsyncIterable, Optional, cast
+import zipfile
 
 import aiofiles
 from aiohttp import BodyPartReader, MultipartReader, web
 import aiohttp
 from aiohttp_session import get_session, new_session, session_middleware
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
-
 from cryptography import fernet
 from numpy import random
+
 from dino_phototrap import Model
 
 routes = web.RouteTableDef()
@@ -38,16 +40,53 @@ async def predicts(request: web.Request) -> web.StreamResponse:
     await response.prepare(request)
 
     session = await get_session(request)
+    csv_path = f"./csv/{session['id']}.csv"
+    archive_path = f"./archives/{session['id']}.zip"
 
     while True:
         predict = await queues[session["id"]].get()
+
         if predict is None:
             break
+
+        with open(csv_path, "a") as f:
+            writer = csv.writer(f)
+            writer.writerows(predict)
+
+        with zipfile.ZipFile(archive_path, "a") as zip:
+            for file, is_broken, is_empty, is_animal in predict:
+                print(file, is_broken, is_empty, is_animal)
+                base_dir = None
+                if is_broken == 1.0:
+                    print("broken")
+                    base_dir = "broken"
+                elif is_empty == 1.0:
+                    print("empty")
+                    base_dir = "empty"
+                else:
+                    print("animal")
+                    base_dir = "animal"
+
+                zip.write(f"./images/{file}", f"result/{base_dir}/{file}")
 
         b = bytearray(json.dumps({"predict": predict}) + "\n", "utf-8")
         await response.write(b)
 
     return response
+
+
+@routes.get("/predicts/csv")
+async def predicts_csv(request: web.Request) -> web.FileResponse:
+    session = await get_session(request)
+    path = f"./csv/{session['id']}.csv"
+    return web.FileResponse(path)
+
+
+@routes.get("/predicts/archive")
+async def predicts_archive(request: web.Request) -> web.FileResponse:
+    session = await get_session(request)
+    path = f"./archives/{session['id']}.zip"
+    return web.FileResponse(path)
 
 
 @routes.get("/")
@@ -57,6 +96,7 @@ async def index(request: web.Request) -> web.Response:
     """
     session = await new_session(request)
     session["id"] = random.randint(0, 100000000)
+    session["predict"] = []
 
     async with aiofiles.open(INDEX_HTML_PATH) as f:
         html = await f.read()
@@ -89,7 +129,9 @@ async def upload_images(request: web.Request) -> web.Response:
 
     async for predict in predictions:
         print(f"{predict=}")
+        predict = [('/'.join(list(path.split("/"))[1:]), *classes) for path, classes in predict]
         await queues[session["id"]].put(predict)
+        session["predict"].extend(predict)
 
     await queues[session["id"]].put(None)
 

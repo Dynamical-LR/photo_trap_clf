@@ -1,6 +1,13 @@
 window.addEventListener("DOMContentLoaded", () => {
 	document.getElementById('upload-images').addEventListener("change", uploadImages);
 	document.getElementById('select-images').addEventListener("click", selectImages);
+
+	document.getElementById('download-csv').addEventListener("click", () => {
+		fetch('/predicts/csv')
+	});
+	document.getElementById('download-archive').addEventListener("click", () => {
+		fetch('/predicts/archive')
+	});
 	uploadTimeValue = document.getElementById('upload-time-value')
 	savedTimeValue = document.getElementById('saved-time-value')
 
@@ -102,13 +109,15 @@ function uploadFile(){
 						}
 						const jsonString = new TextDecoder().decode(value)
 						const parsedData = JSON.parse(jsonString)
+						console.log(parsedData)
 						parsedData.predict.forEach(p => {
 							fileName = p[0]
-							predict = p[1]
+							is_broken = p[1]
+							is_empty = p[2]
 							let toIncrement;
-							if (predict[0] == 1) {
+							if (is_broken == 1) {
 								toIncrement = brokenBar;
-							} else if (predict[1] == 1) {
+							} else if (is_empty == 1) {
 								toIncrement = emptyBar;
 							} else {
 								toIncrement = animals[Math.floor(Math.random() * 2)];
