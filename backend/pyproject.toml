@@ -16,11 +16,13 @@ scikit-learn = "^1.3.1"
 tqdm = "^4.66.1"
 torch = { version = "1.12.1", source="torch"}
 torchvision = { version = "0.13.1", source="torch"}
+cryptography = "^41.0.4"
+aiohttp-session = "^2.12.0"
 
 [[tool.poetry.source]]
 name = "torch"
 url = "https://download.pytorch.org/whl/cpu"
-secondary = false
+secondary = true
 
 [build-system]
 requires = ["poetry-core"]

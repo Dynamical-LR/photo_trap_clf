@@ -5,59 +5,79 @@
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="/static/style.css" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css">
 		<script src="/static/index.js"></script>
 		<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 	</head>
 	<body>
 		<header>
-			<h1>Dynamical LR here</h1>			
-			<p id="saved-time">You saved <b>45</b> hours with our service!</p>
+			<img class="logo" src="/static/dynamicalLr.png" alt="Dynamical LR Logo" />
+			<h4 id="job-done">Обработка завершена</h4>
+			<p id="saved-time">Вы сэкономили <b id="saved-time-value">30</b> с нашим сервисом!</p>
 		</header>
 
 		<div class="form-container" id="form-container">
 			<form id="upload-images-form" class="images" action="/upload-images" method="post" accept-charset="utf-8"
-																																 enctype="multipart/form-data">
+																																												 enctype="multipart/form-data">
 
-				<label class="images" for="images">Drop directories here or&nbsp;</label>
+				<label class="images" for="images">
+					<p class="underline">Перетащите папки сюда или&nbsp;</p>
+				</label>
 				<div class="select-images" id="select-images">
-					choose from explorer
-					<input id="upload-images" type="file" class="hide_file" webkitdirectory directory files multiple>
+					выберите в проводнике
+					<svg viewBox="0 0 13 20"><polyline points="0.5 19.5 3 19.5 12.5 10 3 0.5" /></svg>
+					<input id="upload-images" name="images" value="" type="file" webkitdirectory directory multiple>
 				</div>
 
-				<input id="submit-upload" type="submit" value="submit" style="display: none"/>
+				<input id="submit-upload" type="submit" value="submit" style="display: none;"/>
 			</form>
 		</div>
 
 		<div id="result-window">
-			<div id="result-diagram">
-				<div class="diagram-bar-container">
-					<div class="diagram-bar" id="diagram-bar-broken"></div>
-					<p class="diagram-bar-status">Повреждённые: 50</p>
-				</div>	
-				<div class="diagram-bar-container">
-					<div class="diagram-bar"id="diagram-bar-empty"></div>
-					<p class="diagram-bar-status">Пустые: 50</p>
-				</div>	
-				<div class="diagram-bar-container">
-					<div class="diagram-bar" id="diagram-bar-bird"></div>
-					<p class="diagram-bar-status">Птицы: 50</p>
-				</div>	
-				<div class="diagram-bar-container">
-					<div class="diagram-bar" id="diagram-bar-mammal"></div>
-					<p class="diagram-bar-status">Млекопитающие: 50</p>
-				</div>	
-				<div class="diagram-bar-container">
-					<div class="diagram-bar" id="diagram-bar-insect"></div>
-					<p class="diagram-bar-status">Насекомые: 50</p>
-				</div>	
-			</div>
-			<div id="uploading-progress">
-				<h5 class="upload-time">
-					Until full upload:&nbsp;
-					<h5 id="upload-time-value"></h5>
-				</h5>
-			</div>
+			<table id="chart" class="charts-css column show-labels show-primary-axis show-data-axes data-spacing-20">
+				<caption> Column Example #17 </caption>
+				<tbody>
+					<tr>
+						<th scope="row"> Негодные </th>
+						<td id="broken-bar" style="--size: 0;">
+							<span class="data">0</span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"> Пустые </th>
+						<td id="empty-bar" style="--size: 0;">
+							<span class="data">0</span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"> Птицы </th>
+						<td id="bird-bar" style="--size: 0;">
+							<span class="data">0</span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"> Млекопитающие </th>
+						<td id="mammal-bar" style="--size: 0;">
+							<span class="data">0</span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"> Насекомые </th>
+						<td id="insect-bar" style="--size: 0;">
+							<span class="data">0</span>
+						</td>
+					</tr>
+				</tbody>
+			</table>
 		</div>
+
+		<h5 class="upload-time" id="upload-time-value"></h5>
+
+		<div class="buttons" id="download-buttons">
+			<div class="btn">Скачать CSV</div>
+			<div class="btn">Скачать сортированные файлы</div>
+		</div>
+
 		<footer>
 
 		</footer>

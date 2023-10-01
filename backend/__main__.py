@@ -1,11 +1,19 @@
 import asyncio
+import base64
+from collections import defaultdict
+import json
 import logging
 import os
-from typing import cast
+from typing import AsyncIterable, Optional, cast
 
 import aiofiles
-from aiohttp import web
+from aiohttp import BodyPartReader, MultipartReader, web
 import aiohttp
+from aiohttp_session import get_session, new_session, session_middleware
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
+
+from cryptography import fernet
+from numpy import random
 from dino_phototrap import Model
 
 routes = web.RouteTableDef()
@@ -16,30 +24,50 @@ IMAGES_DIR: str = "images"
 INDEX_HTML_PATH: str = "index.html"
 EXT2CONTENT_TYPE: dict[str, str] = {
     "css": "text/css",
-    "js": "text/javascript"
+    "js": "text/javascript",
+    "png": "image/png",
 }
 
+queues = defaultdict(asyncio.Queue)
+
+
+@routes.get("/predicts")
+async def predicts(request: web.Request) -> web.StreamResponse:
+    response = web.StreamResponse()
+    response.content_type = 'text/plain'
+    await response.prepare(request)
+
+    session = await get_session(request)
+
+    while True:
+        predict = await queues[session["id"]].get()
+        if predict is None:
+            break
+
+        b = bytearray(json.dumps({"predict": predict}) + "\n", "utf-8")
+        await response.write(b)
+
+    return response
+
+
 @routes.get("/")
-async def index(_: web.Request) -> web.Response:
+async def index(request: web.Request) -> web.Response:
     """
     Returns index HTML page
     """
+    session = await new_session(request)
+    session["id"] = random.randint(0, 100000000)
+
     async with aiofiles.open(INDEX_HTML_PATH) as f:
         html = await f.read()
     return web.Response(text=html, content_type='text/html')
 
 
 @routes.get(r"/static/{path}")
-async def static(request: web.Request) -> web.Response:
-    """
-    Returns static files
-    """
+async def static(request: web.Request) -> web.FileResponse:
+    """Returns static files"""
     path: str = request.match_info["path"]
-    log.info(f"Opening {path} for static")
-    async with aiofiles.open(f"static/{path}") as f:
-        resource = await f.read()
-    ext = path.rsplit(".", 1)[-1]
-    return web.Response(text=resource, content_type=EXT2CONTENT_TYPE[ext])
+    return web.FileResponse(f"./static/{path}")
 
 
 @routes.post("/upload-images")
@@ -48,15 +76,35 @@ async def upload_images(request: web.Request) -> web.Response:
     Accepts request from `images` HTML form
     Loads all choosed files to `IMAGEX_DIR`
     """
-    # TODO: Add checksum
+    session = await get_session(request)
 
-    tasks = asyncio.tasks.all_tasks()
-    log.info(f'TASKS: {len(tasks)}')
+    reader: MultipartReader = await request.multipart()
+    paths = _download_files(reader)
+    print("Files downloaded")
 
-    reader = await request.multipart()
+    model = Model("weights/dinov2_5.pth")
+    predictions = model(paths)
 
-    paths = []
-    while (field := await reader.next()) is not None:
+    print(f"{session.identity=}")
+
+    async for predict in predictions:
+        print(f"{predict=}")
+        await queues[session["id"]].put(predict)
+
+    await queues[session["id"]].put(None)
+
+    return web.Response(text="OK")
+
+
+async def _download_files(reader: MultipartReader) -> AsyncIterable[str]:
+    """
+    Downloads files from `reader` and yields
+    paths to files
+    """
+
+    field: Optional[BodyPartReader | MultipartReader] = await reader.next()
+
+    while field is not None:
         field = cast(aiohttp.BodyPartReader, field)
 
         form_name = field.name
@@ -64,8 +112,9 @@ async def upload_images(request: web.Request) -> web.Response:
             raise web.HTTPBadRequest(text="Form should be named 'images'")
 
         filename = field.filename
-        log.info(f"{form_name=}, {filename=}")
         assert filename is not None
+
+        print(f"Downloading {filename=}")
         
         base_path, _ = os.path.split(filename)
         os.makedirs(os.path.join(IMAGES_DIR, base_path), exist_ok=True)
@@ -79,19 +128,20 @@ async def upload_images(request: web.Request) -> web.Response:
                 size += len(chunk)
                 await f.write(chunk)
 
-        paths.append(os.path.join(IMAGES_DIR, filename))
+        yield os.path.join(IMAGES_DIR, filename)
 
-    model = Model("weights/dinov2_5.pth")
-    predictions = model(paths)
-
-    log.info(f"{predictions=}")
-
-    return web.json_response(list(predictions))
+        field = await reader.next()
 
 
 def main():
     app = web.Application()
+
+    fernet_key = fernet.Fernet.generate_key()
+    secret_key = base64.urlsafe_b64decode(fernet_key)
+
     app.add_routes(routes)
+    app.middlewares.append(session_middleware(EncryptedCookieStorage(secret_key)))
+
     web.run_app(app)
 
 

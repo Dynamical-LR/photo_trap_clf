@@ -1,14 +1,19 @@
+import logging
+from typing import AsyncIterable
+
+from PIL import Image
 import numpy as np
 import torch
 import torch.nn as nn
 from torchvision import transforms
 from torchvision import transforms
-from PIL import Image
 
 
 IM_SIZE = 224
 MODEL_VERSION = 'dinov2_vits14'
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+log = logging.getLogger(__name__)
 
 
 class DinoVisionTransformerClassifier(nn.Module):
@@ -52,7 +57,7 @@ class Model():
         self.model.load_state_dict(torch.load(weights_path, map_location=DEVICE))
         self.model.eval()
 
-    def __call__(self, files, batch_size=16):
+    async def __call__(self, files: AsyncIterable[str], batch_size=16) -> AsyncIterable[list]:
         '''Classify images from files and return array with classes
         files: list with pathes to photos to classify
         batch_size: amount of photos processed paralelly
@@ -60,9 +65,14 @@ class Model():
         Returns: array of one-hot-encoded classes ordered as files do
         '''
         outputs = []
+        batch_files = [] * batch_size
         with torch.no_grad():
-            for i in range(0, len(files), batch_size):
-                batch_files = files[i : i + batch_size]
+            async for file in files:
+                batch_files.append(file)
+                if len(batch_files) < batch_size:
+                    continue
+
+                log.info(f"Processing new batch")
 
                 batch_inputs = [self.transform(self.loader(f)) for f in batch_files]
                 batch_inputs = torch.stack(batch_inputs).to(DEVICE)
@@ -71,5 +81,6 @@ class Model():
                 output = np.zeros_like(probs)
                 output[np.arange(output.shape[0]), np.argmax(probs, 1)] = 1
 
-                outputs.append(output)
-        return np.vstack(outputs)
+                yield [(file, predict) for file, predict in zip(batch_files, output.tolist())]
+
+                batch_files.clear()
