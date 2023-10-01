@@ -122,7 +122,7 @@ async def upload_images(request: web.Request) -> web.Response:
     paths = _download_files(reader)
     print("Files downloaded")
 
-    model = Model("weights/dinov2_5.pth")
+    model = Model("weights/dinov2_f4.pth")
     predictions = model(paths)
 
     print(f"{session.identity=}")
